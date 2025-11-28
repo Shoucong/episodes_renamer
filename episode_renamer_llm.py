@@ -7,9 +7,10 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QH
                             QLabel, QLineEdit, QPushButton, QFileDialog, QTableWidget, 
                             QTableWidgetItem, QMessageBox, QSpinBox, QHeaderView, QTabWidget,
                             QTextEdit, QProgressDialog, QComboBox, QCheckBox, QMenu, QGroupBox,
-                            QDialog, QDialogButtonBox, QFormLayout)
-from PyQt6.QtCore import Qt, QThread, pyqtSignal
-from PyQt6.QtGui import QDragEnterEvent, QDropEvent, QAction
+                            QDialog, QDialogButtonBox, QFormLayout, QPlainTextEdit, QSplitter,
+                            QFrame)
+from PyQt6.QtCore import Qt, QThread, pyqtSignal, QDateTime
+from PyQt6.QtGui import QDragEnterEvent, QDropEvent, QAction, QFont
 
 # ============== LLM Integration ==============
 
@@ -21,16 +22,21 @@ class LLMDetector:
     
     def __init__(self, model=None):
         self.model = model or self.DEFAULT_MODEL
+        self.last_prompt = ""
+        self.last_raw_response = ""
+        self.last_duration_ms = 0
     
     def detect_show_info(self, filenames: list[str]) -> dict:
         """
         Send filenames to LLM and get structured show information.
-        Returns: {show_name: str, season: str, start_episode: int, confidence: str}
+        Returns: {show_name: str, season: str, start_episode: int, confidence: str, _log: dict}
         """
         import urllib.request
         import urllib.error
+        import time
         
         prompt = self._build_prompt(filenames)
+        self.last_prompt = prompt
         
         try:
             request_data = json.dumps({
@@ -46,14 +52,34 @@ class LLMDetector:
                 headers={'Content-Type': 'application/json'}
             )
             
-            with urllib.request.urlopen(req, timeout=30) as response:
+            start_time = time.time()
+            with urllib.request.urlopen(req, timeout=60) as response:
                 result = json.loads(response.read().decode('utf-8'))
-                return self._parse_response(result.get('response', ''))
+            elapsed_ms = int((time.time() - start_time) * 1000)
+            
+            raw_response = result.get('response', '')
+            self.last_raw_response = raw_response
+            self.last_duration_ms = elapsed_ms
+            
+            parsed = self._parse_response(raw_response)
+            
+            # Add log information to result
+            parsed['_log'] = {
+                'prompt': prompt,
+                'raw_response': raw_response,
+                'duration_ms': elapsed_ms,
+                'model': self.model,
+                'filenames': filenames,
+                'eval_count': result.get('eval_count', 0),
+                'prompt_eval_count': result.get('prompt_eval_count', 0),
+            }
+            
+            return parsed
                 
         except urllib.error.URLError as e:
-            return {"error": f"Cannot connect to Ollama. Is it running? ({e})"}
+            return {"error": f"Cannot connect to Ollama. Is it running? ({e})", "_log": {"error": str(e)}}
         except Exception as e:
-            return {"error": f"LLM detection failed: {str(e)}"}
+            return {"error": f"LLM detection failed: {str(e)}", "_log": {"error": str(e)}}
     
     def _build_prompt(self, filenames: list[str]) -> str:
         """Build the prompt for the LLM."""
@@ -369,9 +395,51 @@ class EpisodeRenamerApp(QMainWindow):
         self.llm_status_label = QLabel("")
         self.llm_status_label.setStyleSheet("color: gray; font-style: italic;")
         
+        # Toggle log button
+        self.toggle_log_button = QPushButton("Show Log ▼")
+        self.toggle_log_button.setCheckable(True)
+        self.toggle_log_button.setMaximumWidth(100)
+        self.toggle_log_button.clicked.connect(self.toggle_llm_log)
+        
         llm_layout.addWidget(self.auto_detect_button)
         llm_layout.addWidget(self.llm_status_label)
         llm_layout.addStretch()
+        llm_layout.addWidget(self.toggle_log_button)
+        
+        # ===== LLM Log Panel (collapsible) =====
+        self.llm_log_frame = QFrame()
+        self.llm_log_frame.setFrameShape(QFrame.Shape.StyledPanel)
+        self.llm_log_frame.setVisible(False)  # Hidden by default
+        
+        log_layout = QVBoxLayout(self.llm_log_frame)
+        log_layout.setContentsMargins(5, 5, 5, 5)
+        
+        # Log text area
+        self.llm_log_text = QPlainTextEdit()
+        self.llm_log_text.setReadOnly(True)
+        self.llm_log_text.setMaximumHeight(200)
+        self.llm_log_text.setStyleSheet("""
+            QPlainTextEdit {
+                font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+                font-size: 11px;
+                background-color: #1e1e1e;
+                color: #d4d4d4;
+            }
+        """)
+        self.llm_log_text.setPlaceholderText("LLM interaction logs will appear here...")
+        
+        # Clear log button
+        clear_log_btn = QPushButton("Clear Log")
+        clear_log_btn.setMaximumWidth(80)
+        clear_log_btn.clicked.connect(lambda: self.llm_log_text.clear())
+        
+        log_header = QHBoxLayout()
+        log_header.addWidget(QLabel("📋 LLM Interaction Log"))
+        log_header.addStretch()
+        log_header.addWidget(clear_log_btn)
+        
+        log_layout.addLayout(log_header)
+        log_layout.addWidget(self.llm_log_text)
         
         # Show name input
         show_layout = QHBoxLayout()
@@ -457,6 +525,7 @@ class EpisodeRenamerApp(QMainWindow):
         # Add all layouts to tab layout
         rename_layout.addLayout(dir_layout)
         rename_layout.addWidget(llm_group)  # Add the LLM section
+        rename_layout.addWidget(self.llm_log_frame)  # Add the collapsible log panel
         rename_layout.addLayout(show_layout)
         rename_layout.addLayout(season_layout)
         rename_layout.addLayout(episode_layout)
@@ -507,19 +576,82 @@ class EpisodeRenamerApp(QMainWindow):
         self.llm_status_label.setText("🔄 Analyzing filenames...")
         self.statusBar().showMessage("Running LLM detection...")
         
+        # Log the start of detection
+        self.log_llm_message(f"Starting detection with {len(filenames)} files...", "info")
+        self.log_llm_message(f"Files: {', '.join(filenames[:5])}{'...' if len(filenames) > 5 else ''}", "info")
+        
         # Run detection in background thread
         self.llm_worker = LLMWorker(filenames, self.llm_model)
         self.llm_worker.finished.connect(self.on_llm_detection_complete)
         self.llm_worker.start()
     
+    def toggle_llm_log(self):
+        """Toggle visibility of the LLM log panel."""
+        is_visible = self.llm_log_frame.isVisible()
+        self.llm_log_frame.setVisible(not is_visible)
+        self.toggle_log_button.setText("Hide Log ▲" if not is_visible else "Show Log ▼")
+    
+    def log_llm_message(self, message: str, level: str = "info"):
+        """Add a timestamped message to the LLM log."""
+        timestamp = QDateTime.currentDateTime().toString("hh:mm:ss")
+        level_colors = {
+            "info": "#d4d4d4",
+            "success": "#4ec9b0",
+            "error": "#f14c4c",
+            "prompt": "#ce9178",
+            "response": "#9cdcfe"
+        }
+        color = level_colors.get(level, "#d4d4d4")
+        
+        # Format the message
+        formatted = f"[{timestamp}] {message}"
+        self.llm_log_text.appendPlainText(formatted)
+        
+        # Auto-scroll to bottom
+        scrollbar = self.llm_log_text.verticalScrollBar()
+        scrollbar.setValue(scrollbar.maximum())
+    
     def on_llm_detection_complete(self, result: dict):
         """Handle LLM detection results."""
         self.auto_detect_button.setEnabled(True)
         
+        # Extract log info
+        log_info = result.pop('_log', {})
+        
         if "error" in result:
             self.llm_status_label.setText(f"❌ {result['error']}")
             self.statusBar().showMessage("LLM detection failed")
+            self.log_llm_message(f"ERROR: {result['error']}", "error")
             return
+        
+        # Log the interaction details
+        self.log_llm_message("=" * 50, "info")
+        self.log_llm_message(f"Model: {log_info.get('model', 'unknown')}", "info")
+        self.log_llm_message(f"Files analyzed: {len(log_info.get('filenames', []))}", "info")
+        self.log_llm_message(f"Duration: {log_info.get('duration_ms', 0)}ms", "info")
+        
+        # Log token counts if available
+        eval_count = log_info.get('eval_count', 0)
+        prompt_eval = log_info.get('prompt_eval_count', 0)
+        if eval_count or prompt_eval:
+            self.log_llm_message(f"Tokens - Prompt: {prompt_eval}, Generated: {eval_count}", "info")
+        
+        self.log_llm_message("", "info")
+        self.log_llm_message("─── PROMPT SENT ───", "prompt")
+        for line in log_info.get('prompt', '').split('\n'):
+            self.log_llm_message(line, "prompt")
+        
+        self.log_llm_message("", "info")
+        self.log_llm_message("─── RAW RESPONSE ───", "response")
+        self.log_llm_message(log_info.get('raw_response', ''), "response")
+        
+        self.log_llm_message("", "info")
+        self.log_llm_message("─── PARSED RESULT ───", "success")
+        self.log_llm_message(f"Show: {result.get('show_name', 'N/A')}", "success")
+        self.log_llm_message(f"Season: {result.get('season', 'N/A')}", "success")
+        self.log_llm_message(f"Start Episode: {result.get('start_episode', 'N/A')}", "success")
+        self.log_llm_message(f"Confidence: {result.get('confidence', 'N/A')}", "success")
+        self.log_llm_message("=" * 50, "info")
         
         # Fill in the form with detected values
         if result.get("show_name"):
@@ -539,7 +671,8 @@ class EpisodeRenamerApp(QMainWindow):
         confidence_icons = {"high": "✅", "medium": "⚠️", "low": "❓"}
         icon = confidence_icons.get(confidence, "❓")
         
-        self.llm_status_label.setText(f"{icon} Detected (confidence: {confidence})")
+        duration_str = f" ({log_info.get('duration_ms', 0)}ms)"
+        self.llm_status_label.setText(f"{icon} Detected (confidence: {confidence}){duration_str}")
         self.statusBar().showMessage(
             f"Auto-detected: {result.get('show_name', '?')} - {result.get('season', '?')} "
             f"starting at episode {result.get('start_episode', '?')}"
