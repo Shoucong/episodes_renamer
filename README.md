@@ -13,14 +13,6 @@ A simple yet useful macOS application built with Python and PyQt6 designed to re
 * **Backup & Restore:** Safety first! The app creates a `rename_backup.txt` file in the directory. If something goes wrong, you can switch to the **Restore** tab and revert the filenames instantly.
 * **Filters:** Option to include/exclude video files or subtitles.
 
-## Requirements
-
-* Python 3.10
-* PyQt6
-
-## UI
-![alt text](image.png)
-
 ## AI Autodetection
 
 This application supports an AI-powered function to automatically detect show names and episode numbers using local Large Language Models (LLMs). This ensures privacy and runs completely offline.
@@ -42,6 +34,15 @@ This application supports an AI-powered function to automatically detect show na
 
 ![alt text](image-2.png)
 ![alt text](image-1.png)
+
+## Requirements
+
+* Python 3.10
+* PyQt6
+
+## UI
+![alt text](image.png)
+
 
 ## Installation
 
