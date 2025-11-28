@@ -256,7 +256,7 @@ class EpisodeRenamerApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Episode Manager")
-        self.setMinimumSize(800, 650)
+        self.setMinimumSize(900, 800)  # Larger default size for log panel
         
         # Instance variables
         self.directory_path = None
@@ -417,7 +417,8 @@ class EpisodeRenamerApp(QMainWindow):
         # Log text area
         self.llm_log_text = QPlainTextEdit()
         self.llm_log_text.setReadOnly(True)
-        self.llm_log_text.setMaximumHeight(200)
+        self.llm_log_text.setMaximumHeight(150)  # Slightly smaller
+        self.llm_log_text.setMinimumHeight(100)
         self.llm_log_text.setStyleSheet("""
             QPlainTextEdit {
                 font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
@@ -513,6 +514,7 @@ class EpisodeRenamerApp(QMainWindow):
         self.preview_table = QTableWidget(0, 2)
         self.preview_table.setHorizontalHeaderLabels(["Original Filename", "New Filename"])
         self.preview_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.preview_table.setMinimumHeight(200)  # Ensure table has reasonable height
         
         # Apply button
         apply_layout = QHBoxLayout()
