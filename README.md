@@ -1,13 +1,14 @@
 # Episode Renamer for Infuse
 
-A simple yet powerful macOS application built with Python and PyQt6 designed to rename TV show files into a format compatible with [Infuse](https://firecore.com/infuse) automatic metadata scraping.
+A simple yet useful macOS application built with Python and PyQt6 designed to rename TV show files into a format compatible with [Infuse](https://firecore.com/infuse) automatic metadata scraping.
 
-![App Screenshot](screenshot_placeholder.png)
+![App Screenshot](![alt text](image-3.png))
 *(Note: You can upload your screenshot to the repo later and link it here)*
 
 ## Features
 
 * **Infuse-Ready Formatting:** Automatically renames files to the standard `Show Name SxxExx` format required by media scrapers.
+* **Local LLMs support:** using local small LLMs automatically extract the show name, season number and episode number start from the original file names
 * **Drag & Drop:** Easily drag folders directly into the app.
 * **Smart Preview:** See exactly what your files will look like before applying changes.
 * **Backup & Restore:** Safety first! The app creates a `rename_backup.txt` file in the directory. If something goes wrong, you can switch to the **Restore** tab and revert the filenames instantly.
@@ -15,7 +16,7 @@ A simple yet powerful macOS application built with Python and PyQt6 designed to 
 
 ## Requirements
 
-* Python 3.x
+* Python 3.10
 * PyQt6
 
 ## UI
@@ -38,7 +39,7 @@ This application supports an AI-powered function to automatically detect show na
 - **Recommended RAM:** 16GB or higher
 - **Tested Environment:** Runs smoothly on Apple Silicon M1 Pro with 16GB RAM
 
-> **Note:** While other models available on Ollama can be used, `qwen3:8b` is recommended for the best balance of accuracy and speed. `gemma2:9b` and `gemma3:12b` also tested on my local machine without problem, llama3.1 should not be used as it doest not follow the prompt and doest not output json format sometimes.
+> **Note:** While other models available on Ollama can be used, `qwen3:8b` is recommended for the best balance of accuracy and speed. `gemma2:9b` and `gemma3:12b` also tested on my local machine without problem, llama3.1 should not be used as it doest not follow the prompt and does not output json format sometimes.
 
 ![alt text](image-2.png)
 ![alt text](image-1.png)
@@ -60,10 +61,11 @@ This application supports an AI-powered function to automatically detect show na
 
 1.  Run the application:
     ```bash
-    python episode_renamer_app.py
+    python episode_renamer_app_llm.py
     ```
 2.  **Rename Tab:**
     * Select your TV show folder (or drag and drop it).
+    * Using AI Auto-Detect if you have ollama running
     * Enter the **Show Name** and **Season** (e.g., S1).
     * Set the **Starting Episode** number.
     * Click **Preview Renaming** to check the results.
