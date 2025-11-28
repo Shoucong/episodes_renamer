@@ -2,7 +2,7 @@
 
 A simple yet useful macOS application built with Python and PyQt6 designed to rename TV show files into a format compatible with [Infuse](https://firecore.com/infuse) automatic metadata scraping.
 
-[App Screenshot](![alt text](image-3.png))
+[App Screenshot](![alt text](assets/image-3.png))
 
 ## Features
 
@@ -32,8 +32,8 @@ This application supports an AI-powered function to automatically detect show na
 
 > **Note:** While other models available on Ollama can be used, `qwen3:8b` is recommended for the best balance of accuracy and speed. `gemma2:9b` and `gemma3:12b` also tested on my local machine without problem, llama3.1 should not be used as it doest not follow the prompt and does not output json format sometimes.
 
-![alt text](image-2.png)
-![alt text](image-1.png)
+![alt text](assets/image-2.png)
+![alt text](assets/image-1.png)
 
 ## Requirements
 
@@ -41,7 +41,7 @@ This application supports an AI-powered function to automatically detect show na
 * PyQt6
 
 ## UI
-![alt text](image.png)
+![alt text](assets/image.png)
 
 
 ## Installation
