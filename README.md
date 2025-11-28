@@ -18,6 +18,9 @@ A simple yet powerful macOS application built with Python and PyQt6 designed to 
 * Python 3.x
 * PyQt6
 
+## UI
+![alt text](image.png)
+
 ## Installation
 
 1.  Clone this repository:
