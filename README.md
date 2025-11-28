@@ -2,8 +2,7 @@
 
 A simple yet useful macOS application built with Python and PyQt6 designed to rename TV show files into a format compatible with [Infuse](https://firecore.com/infuse) automatic metadata scraping.
 
-![App Screenshot](![alt text](image-3.png))
-*(Note: You can upload your screenshot to the repo later and link it here)*
+[App Screenshot](![alt text](image-3.png))
 
 ## Features
 
