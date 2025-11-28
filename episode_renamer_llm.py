@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QH
                             QTextEdit, QProgressDialog, QComboBox, QCheckBox, QMenu, QGroupBox,
                             QDialog, QDialogButtonBox, QFormLayout, QPlainTextEdit, QSplitter,
                             QFrame)
-from PyQt6.QtCore import Qt, QThread, pyqtSignal, QDateTime
+from PyQt6.QtCore import Qt, QThread, pyqtSignal, QDateTime, QUrl
 from PyQt6.QtGui import QDragEnterEvent, QDropEvent, QAction, QFont
 
 # ============== LLM Integration ==============
@@ -755,13 +755,28 @@ class EpisodeRenamerApp(QMainWindow):
             self.add_to_recent(directory)
     
     def browse_directory(self):
-        directory = QFileDialog.getExistingDirectory(
-            self, 
-            "Select Directory",
-            "",
-            QFileDialog.Option.DontUseNativeDialog  # Avoids macOS native dialog issues
-        )
-        if directory:
+        dialog = QFileDialog(self, "Select Directory")
+        dialog.setFileMode(QFileDialog.FileMode.Directory)
+        dialog.setOption(QFileDialog.Option.DontUseNativeDialog, True)
+        dialog.setOption(QFileDialog.Option.ShowDirsOnly, True)
+        
+        # Add common locations including external drives
+        sidebar_urls = [
+            QUrl.fromLocalFile(str(Path.home())),
+            QUrl.fromLocalFile(str(Path.home() / "Desktop")),
+            QUrl.fromLocalFile(str(Path.home() / "Downloads")),
+            QUrl.fromLocalFile("/Volumes"),  # External drives on macOS
+        ]
+        dialog.setSidebarUrls(sidebar_urls)
+        
+        # Start in last used directory or home
+        if self.directory_path:
+            dialog.setDirectory(str(Path(self.directory_path).parent))
+        else:
+            dialog.setDirectory(str(Path.home()))
+        
+        if dialog.exec() == QFileDialog.DialogCode.Accepted:
+            directory = dialog.selectedFiles()[0]
             self.directory_path = directory
             self.dir_edit.setText(directory)
             self.statusBar().showMessage(f"Selected directory: {directory}")
@@ -937,13 +952,23 @@ class EpisodeRenamerApp(QMainWindow):
         self.statusBar().showMessage(f"Renamed {success_count} files successfully, {error_count} errors")
     
     def browse_restore_directory(self):
-        directory = QFileDialog.getExistingDirectory(
-            self, 
-            "Select Directory with Backup File",
-            "",
-            QFileDialog.Option.DontUseNativeDialog  # Avoids macOS native dialog issues
-        )
-        if directory:
+        dialog = QFileDialog(self, "Select Directory with Backup File")
+        dialog.setFileMode(QFileDialog.FileMode.Directory)
+        dialog.setOption(QFileDialog.Option.DontUseNativeDialog, True)
+        dialog.setOption(QFileDialog.Option.ShowDirsOnly, True)
+        
+        # Add common locations including external drives
+        sidebar_urls = [
+            QUrl.fromLocalFile(str(Path.home())),
+            QUrl.fromLocalFile(str(Path.home() / "Desktop")),
+            QUrl.fromLocalFile(str(Path.home() / "Downloads")),
+            QUrl.fromLocalFile("/Volumes"),  # External drives on macOS
+        ]
+        dialog.setSidebarUrls(sidebar_urls)
+        dialog.setDirectory(str(Path.home()))
+        
+        if dialog.exec() == QFileDialog.DialogCode.Accepted:
+            directory = dialog.selectedFiles()[0]
             self.restore_dir_edit.setText(directory)
             self.add_to_recent(directory)
             backup_file = Path(directory) / "rename_backup.txt"
