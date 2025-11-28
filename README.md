@@ -21,6 +21,28 @@ A simple yet powerful macOS application built with Python and PyQt6 designed to 
 ## UI
 ![alt text](image.png)
 
+## AI Autodetection
+
+This application supports an AI-powered function to automatically detect show names and episode numbers using local Large Language Models (LLMs). This ensures privacy and runs completely offline.
+
+### Requirements
+
+- **Ollama:** You must have [Ollama](https://ollama.com/) installed and running.
+- **Model:** The recommended model is `gemma3:12b`. To install, run:
+```bash
+  ollama pull gemma3:12b
+```
+
+### Performance & Hardware
+
+- **Recommended RAM:** 16GB or higher
+- **Tested Environment:** Runs smoothly on Apple Silicon M1 Pro with 16GB RAM
+
+> **Note:** While other models available on Ollama can be used, `gemma3:12b` is recommended for the best balance of accuracy and speed.
+
+![alt text](image-2.png)
+![alt text](image-1.png)
+
 ## Installation
 
 1.  Clone this repository:
