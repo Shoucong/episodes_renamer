@@ -237,15 +237,16 @@ class RenameWorker(QThread):
             try:
                 new_path = self.directory / new_name
                 original_file.rename(new_path)
-                backup[str(original_file)] = str(new_path)
+                # Store only filenames, not full paths (makes backup portable)
+                backup[original_file.name] = new_name
                 success_count += 1
             except Exception:
                 error_count += 1
                 
         try:
             with open(self.directory / "rename_backup.txt", "w") as f:
-                for old, new in backup.items():
-                    f.write(f"{old} -> {new}\n")
+                for old_name, new_name in backup.items():
+                    f.write(f"{old_name} -> {new_name}\n")
         except Exception:
             pass
             
@@ -1023,17 +1024,19 @@ class EpisodeRenamerApp(QMainWindow):
             return
         
         backup_file = Path(directory) / "rename_backup.txt"
-        restore_map = {}
+        restore_map = {}  # new_name -> original_name
         
         try:
             with open(backup_file, "r") as f:
                 for line in f:
                     if " -> " in line:
-                        old_path_str, new_path_str = line.strip().split(" -> ")
-                        try:
-                            restore_map[new_path_str] = old_path_str
-                        except Exception:
-                            continue
+                        parts = line.strip().split(" -> ")
+                        if len(parts) == 2:
+                            original_name, new_name = parts
+                            # Extract just filename if full path was stored (backwards compatibility)
+                            original_name = Path(original_name).name
+                            new_name = Path(new_name).name
+                            restore_map[new_name] = original_name
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error reading backup file: {str(e)}")
             return
@@ -1052,26 +1055,28 @@ class EpisodeRenamerApp(QMainWindow):
         restored_count = 0
         error_count = 0
         results = []
+        current_dir = Path(directory)
         
         try:
-            for i, (new_path_str, old_path_str) in enumerate(restore_map.items()):
+            for i, (new_name, original_name) in enumerate(restore_map.items()):
                 self.progress_dialog.setValue(i)
                 if self.progress_dialog.wasCanceled():
                     break
                     
                 try:
-                    new_path = Path(new_path_str)
-                    old_path = Path(old_path_str)
+                    # Use current directory + filename
+                    new_path = current_dir / new_name
+                    original_path = current_dir / original_name
                     
                     if new_path.exists():
-                        new_path.rename(old_path)
-                        results.append(f"Restored: {new_path.name} -> {old_path.name}")
+                        new_path.rename(original_path)
+                        results.append(f"Restored: {new_name} -> {original_name}")
                         restored_count += 1
                     else:
-                        results.append(f"Skipped: {new_path.name} (file not found)")
+                        results.append(f"Skipped: {new_name} (file not found)")
                 except Exception as e:
                     error_count += 1
-                    results.append(f"Error: {os.path.basename(new_path_str)} - {str(e)}")
+                    results.append(f"Error: {new_name} - {str(e)}")
         finally:
             self.progress_dialog.close()
             
