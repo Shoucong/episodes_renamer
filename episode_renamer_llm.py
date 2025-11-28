@@ -17,7 +17,7 @@ from PyQt6.QtGui import QDragEnterEvent, QDropEvent, QAction, QFont
 class LLMDetector:
     """Handles communication with local Ollama LLM for filename parsing."""
     
-    DEFAULT_MODEL = "gemma3:12b"  # Can be changed to any Ollama model
+    DEFAULT_MODEL = "qwen3:8b"  # Can be changed to any Ollama model
     OLLAMA_URL = "http://localhost:11434/api/generate"
     
     def __init__(self, model=None):

@@ -28,9 +28,9 @@ This application supports an AI-powered function to automatically detect show na
 ### Requirements
 
 - **Ollama:** You must have [Ollama](https://ollama.com/) installed and running.
-- **Model:** The recommended model is `gemma3:12b`. To install, run:
+- **Model:** The recommended model is `qwen3:8b`,`gemma2:9b`,`gemma3:12b`. To install, run:
 ```bash
-  ollama pull gemma3:12b
+  ollama pull qwen3:8b
 ```
 
 ### Performance & Hardware
@@ -38,7 +38,7 @@ This application supports an AI-powered function to automatically detect show na
 - **Recommended RAM:** 16GB or higher
 - **Tested Environment:** Runs smoothly on Apple Silicon M1 Pro with 16GB RAM
 
-> **Note:** While other models available on Ollama can be used, `gemma3:12b` is recommended for the best balance of accuracy and speed.
+> **Note:** While other models available on Ollama can be used, `qwen3:8b` is recommended for the best balance of accuracy and speed. `gemma2:9b` and `gemma3:12b` also tested on my local machine without problem, llama3.1 should not be used as it doest not follow the prompt and doest not output json format sometimes.
 
 ![alt text](image-2.png)
 ![alt text](image-1.png)
