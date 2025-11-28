@@ -755,7 +755,12 @@ class EpisodeRenamerApp(QMainWindow):
             self.add_to_recent(directory)
     
     def browse_directory(self):
-        directory = QFileDialog.getExistingDirectory(self, "Select Directory")
+        directory = QFileDialog.getExistingDirectory(
+            self, 
+            "Select Directory",
+            "",
+            QFileDialog.Option.DontUseNativeDialog  # Avoids macOS native dialog issues
+        )
         if directory:
             self.directory_path = directory
             self.dir_edit.setText(directory)
@@ -932,7 +937,12 @@ class EpisodeRenamerApp(QMainWindow):
         self.statusBar().showMessage(f"Renamed {success_count} files successfully, {error_count} errors")
     
     def browse_restore_directory(self):
-        directory = QFileDialog.getExistingDirectory(self, "Select Directory with Backup File")
+        directory = QFileDialog.getExistingDirectory(
+            self, 
+            "Select Directory with Backup File",
+            "",
+            QFileDialog.Option.DontUseNativeDialog  # Avoids macOS native dialog issues
+        )
         if directory:
             self.restore_dir_edit.setText(directory)
             self.add_to_recent(directory)
