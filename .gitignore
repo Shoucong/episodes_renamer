@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.manifest
+
+# PyInstaller / Build Artifacts
+build/
+dist/
+*.spec
+
+# Mac OS
+.DS_Store
+
+# Virtual Environments
+venv/
+env/
+.env
+
+# App Specific
+rename_backup.txt
