@@ -3,11 +3,12 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.manifest
+*.egg-info/
+*.egg
 
 # PyInstaller / Build Artifacts
-build/
+build/temp/
 dist/
-*.spec
 
 # Mac OS
 .DS_Store
@@ -16,6 +17,10 @@ dist/
 venv/
 env/
 .env
+
+# IDE
+.vscode/
+.idea/
 
 # App Specific
 rename_backup.txt
