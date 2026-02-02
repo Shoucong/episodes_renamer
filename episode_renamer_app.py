@@ -1,12 +1,24 @@
+"""
+Episode Renamer Application
+Optimized for fast startup - essential imports only
+"""
 import sys
 import os
 from pathlib import Path
+
+# ===============================================================================
+# PyQt6 Imports - All essential widgets loaded at startup
+# Note: Lazy imports were removed as they caused crashes in signal handlers
+# when running in PyInstaller bundles
+# ===============================================================================
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
-                            QLabel, QLineEdit, QPushButton, QFileDialog, QTableWidget, 
-                            QTableWidgetItem, QMessageBox, QSpinBox, QHeaderView, QTabWidget,
-                            QTextEdit, QProgressDialog, QComboBox, QCheckBox, QMenu)
-from PyQt6.QtCore import Qt, QThread, pyqtSignal
+                            QLabel, QLineEdit, QPushButton, QTableWidget, 
+                            QTableWidgetItem, QSpinBox, QHeaderView, QTabWidget,
+                            QTextEdit, QComboBox, QCheckBox, QMenu,
+                            QFileDialog, QMessageBox, QProgressDialog)
+from PyQt6.QtCore import Qt, QThread, pyqtSignal, QUrl
 from PyQt6.QtGui import QDragEnterEvent, QDropEvent, QAction
+
 
 class RenameWorker(QThread):
     progress = pyqtSignal(int)
@@ -40,6 +52,7 @@ class RenameWorker(QThread):
             pass
             
         self.finished.emit(backup, success_count, error_count)
+
 
 class EpisodeRenamerApp(QMainWindow):
     def __init__(self):
@@ -342,6 +355,7 @@ class EpisodeRenamerApp(QMainWindow):
             self.add_to_recent(directory)
     
     def preview_renaming(self):
+        
         if not self.validate_inputs():
             return
         
@@ -375,6 +389,7 @@ class EpisodeRenamerApp(QMainWindow):
             self.statusBar().showMessage("No files found for renaming")
     
     def validate_inputs(self):
+        
         if not self.directory_path:
             QMessageBox.warning(self, "Missing Directory", "Please select a directory.")
             return False
@@ -487,6 +502,7 @@ class EpisodeRenamerApp(QMainWindow):
             self.preview_table.setItem(i, 1, QTableWidgetItem(new_name))
     
     def apply_renaming(self):
+        
         if not self.preview_data:
             return
         
@@ -520,6 +536,7 @@ class EpisodeRenamerApp(QMainWindow):
         self.rename_worker.start()
     
     def on_rename_complete(self, backup, success_count, error_count):
+        
         # Close the progress dialog first
         self.progress_dialog.close()
         
@@ -544,6 +561,7 @@ class EpisodeRenamerApp(QMainWindow):
         self.statusBar().showMessage(f"Renamed {success_count} files successfully, {error_count} errors")
     
     def browse_restore_directory(self):
+        
         directory = QFileDialog.getExistingDirectory(self, "Select Directory with Backup File")
         if directory:
             self.restore_dir_edit.setText(directory)
@@ -560,6 +578,7 @@ class EpisodeRenamerApp(QMainWindow):
                 self.statusBar().showMessage(f"No backup file found in: {directory}")
     
     def load_backup_file(self):
+        
         directory = self.restore_dir_edit.text()
         if not directory:
             return
@@ -587,6 +606,7 @@ class EpisodeRenamerApp(QMainWindow):
             self.statusBar().showMessage("Error reading backup file")
     
     def restore_filenames(self):
+        
         directory = self.restore_dir_edit.text()
         if not directory:
             return
@@ -699,6 +719,7 @@ class EpisodeRenamerApp(QMainWindow):
                 except Exception as e:
                     self.backup_text.append(f"\nError deleting backup file: {str(e)}")
                     self.statusBar().showMessage("Error deleting backup file")
+
 
 def main():
     app = QApplication(sys.argv)

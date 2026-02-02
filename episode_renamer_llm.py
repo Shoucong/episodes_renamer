@@ -1,18 +1,31 @@
+"""
+Episode Renamer LLM Application
+Optimized for fast startup - essential imports only
+"""
 import sys
 import os
 import json
 import re
 from pathlib import Path
+
+# ===============================================================================
+# PyQt6 Imports - All essential widgets loaded at startup
+# Note: Lazy imports were removed as they caused crashes in signal handlers
+# when running in PyInstaller bundles
+# ===============================================================================
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
-                            QLabel, QLineEdit, QPushButton, QFileDialog, QTableWidget, 
-                            QTableWidgetItem, QMessageBox, QSpinBox, QHeaderView, QTabWidget,
-                            QTextEdit, QProgressDialog, QComboBox, QCheckBox, QMenu, QGroupBox,
+                            QLabel, QLineEdit, QPushButton, QTableWidget, 
+                            QTableWidgetItem, QSpinBox, QHeaderView, QTabWidget,
+                            QTextEdit, QComboBox, QCheckBox, QMenu, QGroupBox,
                             QDialog, QDialogButtonBox, QFormLayout, QPlainTextEdit, QSplitter,
-                            QFrame)
+                            QFrame, QFileDialog, QMessageBox, QProgressDialog)
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QDateTime, QUrl
 from PyQt6.QtGui import QDragEnterEvent, QDropEvent, QAction, QFont
 
-# ============== LLM Integration ==============
+
+# ===============================================================================
+# LLM Integration
+# ===============================================================================
 
 class LLMDetector:
     """Handles communication with local Ollama LLM for filename parsing."""
@@ -76,9 +89,10 @@ class LLMDetector:
             
             return parsed
                 
-        except urllib.error.URLError as e:
-            return {"error": f"Cannot connect to Ollama. Is it running? ({e})", "_log": {"error": str(e)}}
         except Exception as e:
+            import urllib.error
+            if isinstance(e, urllib.error.URLError):
+                return {"error": f"Cannot connect to Ollama. Is it running? ({e})", "_log": {"error": str(e)}}
             return {"error": f"LLM detection failed: {str(e)}", "_log": {"error": str(e)}}
     
     def _build_prompt(self, filenames: list[str]) -> str:
@@ -199,7 +213,7 @@ class LLMSettingsDialog(QDialog):
         
         # Help text
         help_text = QLabel(
-            "Tip: For best results, use models like gemma3:12b, llama3.1:8b, or mistral.\n"
+            "Tip: For best results, use models like gemma3:12b, qwen:8B.\n"
             "Install models with: ollama pull <model_name>"
         )
         help_text.setStyleSheet("color: gray; font-size: 11px;")
@@ -216,7 +230,9 @@ class LLMSettingsDialog(QDialog):
         return self.model_combo.currentText()
 
 
-# ============== Main Application ==============
+# ===============================================================================
+# Main Application
+# ===============================================================================
 
 class RenameWorker(QThread):
     progress = pyqtSignal(int)
@@ -541,6 +557,7 @@ class EpisodeRenamerApp(QMainWindow):
     
     def auto_detect_show_info(self):
         """Use LLM to auto-detect show information from filenames."""
+        
         if not self.directory_path:
             QMessageBox.warning(self, "No Directory", "Please select a directory first.")
             return
@@ -756,6 +773,7 @@ class EpisodeRenamerApp(QMainWindow):
             self.add_to_recent(directory)
     
     def browse_directory(self):
+        
         dialog = QFileDialog(self, "Select Directory")
         dialog.setFileMode(QFileDialog.FileMode.Directory)
         dialog.setOption(QFileDialog.Option.DontUseNativeDialog, True)
@@ -784,6 +802,7 @@ class EpisodeRenamerApp(QMainWindow):
             self.add_to_recent(directory)
     
     def preview_renaming(self):
+        
         if not self.validate_inputs():
             return
         
@@ -809,6 +828,7 @@ class EpisodeRenamerApp(QMainWindow):
             self.statusBar().showMessage("No files found for renaming")
     
     def validate_inputs(self):
+        
         if not self.directory_path:
             QMessageBox.warning(self, "Missing Directory", "Please select a directory.")
             return False
@@ -906,6 +926,7 @@ class EpisodeRenamerApp(QMainWindow):
             self.preview_table.setItem(i, 1, QTableWidgetItem(new_name))
     
     def apply_renaming(self):
+        
         if not self.preview_data:
             return
         
@@ -934,6 +955,7 @@ class EpisodeRenamerApp(QMainWindow):
         self.rename_worker.start()
     
     def on_rename_complete(self, backup, success_count, error_count):
+        
         self.progress_dialog.close()
         
         self.apply_button.setEnabled(False)
@@ -953,6 +975,7 @@ class EpisodeRenamerApp(QMainWindow):
         self.statusBar().showMessage(f"Renamed {success_count} files successfully, {error_count} errors")
     
     def browse_restore_directory(self):
+        
         dialog = QFileDialog(self, "Select Directory with Backup File")
         dialog.setFileMode(QFileDialog.FileMode.Directory)
         dialog.setOption(QFileDialog.Option.DontUseNativeDialog, True)
@@ -983,6 +1006,7 @@ class EpisodeRenamerApp(QMainWindow):
                 self.statusBar().showMessage(f"No backup file found in: {directory}")
     
     def load_backup_file(self):
+        
         directory = self.restore_dir_edit.text()
         if not directory:
             return
@@ -1009,6 +1033,7 @@ class EpisodeRenamerApp(QMainWindow):
             self.statusBar().showMessage("Error reading backup file")
     
     def restore_filenames(self):
+        
         directory = self.restore_dir_edit.text()
         if not directory:
             return
